@@ -7,7 +7,6 @@ $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 $outputFile = __DIR__ . '/milkflow_database.sql';
 
@@ -34,6 +33,112 @@ $sql = $header . "\n";
 
 // Table Schemas (MySQL DDL)
 $tableSchemas = [
+    // 1. Laravel Framework Infrastructure Tables
+    'migrations' => "
+DROP TABLE IF EXISTS `migrations`;
+CREATE TABLE `migrations` (
+  `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `migration` varchar(255) NOT NULL,
+  `batch` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+",
+
+    'password_reset_tokens' => "
+DROP TABLE IF EXISTS `password_reset_tokens`;
+CREATE TABLE `password_reset_tokens` (
+  `email` varchar(255) NOT NULL,
+  `token` varchar(255) NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+",
+
+    'sessions' => "
+DROP TABLE IF EXISTS `sessions`;
+CREATE TABLE `sessions` (
+  `id` varchar(255) NOT NULL,
+  `user_id` bigint(20) UNSIGNED DEFAULT NULL,
+  `ip_address` varchar(45) DEFAULT NULL,
+  `user_agent` text DEFAULT NULL,
+  `payload` longtext NOT NULL,
+  `last_activity` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `sessions_user_id_index` (`user_id`),
+  KEY `sessions_last_activity_index` (`last_activity`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+",
+
+    'cache' => "
+DROP TABLE IF EXISTS `cache`;
+CREATE TABLE `cache` (
+  `key` varchar(255) NOT NULL,
+  `value` mediumtext NOT NULL,
+  `expiration` int(11) NOT NULL,
+  PRIMARY KEY (`key`),
+  KEY `cache_expiration_index` (`expiration`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+",
+
+    'cache_locks' => "
+DROP TABLE IF EXISTS `cache_locks`;
+CREATE TABLE `cache_locks` (
+  `key` varchar(255) NOT NULL,
+  `owner` varchar(255) NOT NULL,
+  `expiration` int(11) NOT NULL,
+  PRIMARY KEY (`key`),
+  KEY `cache_locks_expiration_index` (`expiration`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+",
+
+    'jobs' => "
+DROP TABLE IF EXISTS `jobs`;
+CREATE TABLE `jobs` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `queue` varchar(255) NOT NULL,
+  `payload` longtext NOT NULL,
+  `attempts` tinyint(3) UNSIGNED NOT NULL,
+  `reserved_at` int(10) UNSIGNED DEFAULT NULL,
+  `available_at` int(10) UNSIGNED NOT NULL,
+  `created_at` int(10) UNSIGNED NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `jobs_queue_index` (`queue`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+",
+
+    'job_batches' => "
+DROP TABLE IF EXISTS `job_batches`;
+CREATE TABLE `job_batches` (
+  `id` varchar(255) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `total_jobs` int(11) NOT NULL,
+  `pending_jobs` int(11) NOT NULL,
+  `failed_jobs` int(11) NOT NULL,
+  `failed_job_ids` longtext NOT NULL,
+  `options` mediumtext DEFAULT NULL,
+  `cancelled_at` int(11) DEFAULT NULL,
+  `created_at` int(11) NOT NULL,
+  `finished_at` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+",
+
+    'failed_jobs' => "
+DROP TABLE IF EXISTS `failed_jobs`;
+CREATE TABLE `failed_jobs` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(255) NOT NULL,
+  `connection` text NOT NULL,
+  `queue` text NOT NULL,
+  `payload` longtext NOT NULL,
+  `exception` longtext NOT NULL,
+  `failed_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `failed_jobs_uuid_unique` (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+",
+
+    // 2. Business SaaS Domain Tables
     'dairies' => "
 DROP TABLE IF EXISTS `dairies`;
 CREATE TABLE `dairies` (
@@ -322,29 +427,33 @@ foreach ($tableSchemas as $table => $schema) {
     $sql .= "\n-- Table structure for `$table`\n";
     $sql .= trim($schema) . "\n\n";
 
-    // Fetch data
-    $rows = DB::table($table)->get();
-    if ($rows->isNotEmpty()) {
-        $sql .= "-- Dumping data for table `$table`\n";
-        $columns = array_keys((array) $rows->first());
-        $colList = '`' . implode('`, `', $columns) . '`';
+    // Fetch data if table exists in current database
+    try {
+        $rows = DB::table($table)->get();
+        if ($rows->isNotEmpty()) {
+            $sql .= "-- Dumping data for table `$table`\n";
+            $columns = array_keys((array) $rows->first());
+            $colList = '`' . implode('`, `', $columns) . '`';
 
-        $valuesList = [];
-        foreach ($rows as $row) {
-            $vals = [];
-            foreach ((array) $row as $val) {
-                if (is_null($val)) {
-                    $vals[] = 'NULL';
-                } elseif (is_numeric($val) && !is_string($val)) {
-                    $vals[] = $val;
-                } else {
-                    $vals[] = "'" . addslashes((string) $val) . "'";
+            $valuesList = [];
+            foreach ($rows as $row) {
+                $vals = [];
+                foreach ((array) $row as $val) {
+                    if (is_null($val)) {
+                        $vals[] = 'NULL';
+                    } elseif (is_numeric($val) && !is_string($val)) {
+                        $vals[] = $val;
+                    } else {
+                        $vals[] = "'" . addslashes((string) $val) . "'";
+                    }
                 }
+                $valuesList[] = '(' . implode(', ', $vals) . ')';
             }
-            $valuesList[] = '(' . implode(', ', $vals) . ')';
-        }
 
-        $sql .= "INSERT INTO `$table` ($colList) VALUES\n" . implode(",\n", $valuesList) . ";\n";
+            $sql .= "INSERT INTO `$table` ($colList) VALUES\n" . implode(",\n", $valuesList) . ";\n";
+        }
+    } catch (\Throwable $e) {
+        // Table may be empty or not populated yet
     }
 }
 
