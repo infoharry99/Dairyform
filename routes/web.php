@@ -89,3 +89,17 @@ Route::prefix('customer')->name('customer.')->group(function () {
     Route::get('/support', [CustomerPortalController::class, 'support'])->name('support');
     Route::post('/support', [CustomerPortalController::class, 'storeSupportTicket'])->name('support.store');
 });
+
+// ==========================================
+// 6. CUSTOMER MOBILE APP REST API
+// ==========================================
+Route::prefix('api/customer')->name('api.customer.')->group(function () {
+    Route::post('/login', [\App\Http\Controllers\Api\CustomerApiController::class, 'login']);
+    Route::get('/dashboard/{id?}', [\App\Http\Controllers\Api\CustomerApiController::class, 'dashboard']);
+    Route::get('/milk/{id?}', [\App\Http\Controllers\Api\CustomerApiController::class, 'milkRecords']);
+    Route::get('/bills/{id?}', [\App\Http\Controllers\Api\CustomerApiController::class, 'bills']);
+    Route::post('/pay', [\App\Http\Controllers\Api\CustomerApiController::class, 'pay']);
+    Route::post('/schedule', [\App\Http\Controllers\Api\CustomerApiController::class, 'requestSchedule']);
+    Route::get('/support/{id?}', [\App\Http\Controllers\Api\CustomerApiController::class, 'supportTickets']);
+    Route::post('/support', [\App\Http\Controllers\Api\CustomerApiController::class, 'createTicket']);
+});
