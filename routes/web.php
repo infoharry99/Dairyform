@@ -103,3 +103,24 @@ Route::prefix('api/customer')->name('api.customer.')->group(function () {
     Route::get('/support/{id?}', [\App\Http\Controllers\Api\CustomerApiController::class, 'supportTickets']);
     Route::post('/support', [\App\Http\Controllers\Api\CustomerApiController::class, 'createTicket']);
 });
+
+// ==========================================
+// 7. DAIRY ADMIN MOBILE APP REST API
+// ==========================================
+Route::prefix('api/dairy')->name('api.dairy.')->group(function () {
+    Route::post('/login', [\App\Http\Controllers\Api\DairyAdminApiController::class, 'login']);
+    Route::get('/dashboard', [\App\Http\Controllers\Api\DairyAdminApiController::class, 'dashboard']);
+    Route::get('/customers', [\App\Http\Controllers\Api\DairyAdminApiController::class, 'customers']);
+    Route::post('/customers', [\App\Http\Controllers\Api\DairyAdminApiController::class, 'storeCustomer']);
+    Route::post('/customers/{id}/toggle-status', [\App\Http\Controllers\Api\DairyAdminApiController::class, 'toggleCustomerStatus']);
+    Route::get('/milk-entry', [\App\Http\Controllers\Api\DairyAdminApiController::class, 'milkEntryRoster']);
+    Route::post('/milk-entry/save', [\App\Http\Controllers\Api\DairyAdminApiController::class, 'saveMilkEntry']);
+    Route::post('/milk-entry/batch', [\App\Http\Controllers\Api\DairyAdminApiController::class, 'batchMarkDelivered']);
+    Route::get('/bills', [\App\Http\Controllers\Api\DairyAdminApiController::class, 'bills']);
+    Route::post('/bills/generate', [\App\Http\Controllers\Api\DairyAdminApiController::class, 'generateBills']);
+    Route::post('/payments/record', [\App\Http\Controllers\Api\DairyAdminApiController::class, 'recordPayment']);
+    Route::get('/requests', [\App\Http\Controllers\Api\DairyAdminApiController::class, 'requests']);
+    Route::post('/requests/{id}/status', [\App\Http\Controllers\Api\DairyAdminApiController::class, 'updateRequestStatus']);
+    Route::get('/products', [\App\Http\Controllers\Api\DairyAdminApiController::class, 'products']);
+    Route::post('/products', [\App\Http\Controllers\Api\DairyAdminApiController::class, 'storeProduct']);
+});
