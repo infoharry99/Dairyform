@@ -231,7 +231,9 @@ class CustomerApiController extends Controller
         }
 
         $amount = (float) ($request->amount ?? ($bill ? $bill->pending_amount : 1480.00));
-        $method = $request->payment_method ?? 'upi';
+        $rawMethod = strtolower($request->payment_method ?? 'upi');
+        $validMethods = ['cash', 'online', 'upi', 'bank_transfer', 'cheque'];
+        $method = in_array($rawMethod, $validMethods) ? $rawMethod : 'upi';
         $txId = 'MF' . date('Ymd') . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
 
         $payment = Payment::create([
